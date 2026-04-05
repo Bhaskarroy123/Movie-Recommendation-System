@@ -7,45 +7,63 @@ import requests
 # ==============================
 # DOWNLOAD similarity.pkl FROM DRIVE
 # ==============================
-if not os.path.exists("similarity.pkl"):
-    url = "https://drive.google.com/uc?id=10_IrwLOuJUyqAn0esojVl0g1QrCB7EIQ"
-    gdown.download(url, "similarity.pkl", quiet=False)
+def download_file_from_drive(file_id, destination):
+    URL = "https://drive.google.com/uc?export=download"
+    session = requests.Session()
 
+    response = session.get(URL, params={'id': file_id}, stream=True)
+
+    # Handle large file confirmation
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            response = session.get(URL, params={'id': file_id, 'confirm': value}, stream=True)
+
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(32768):
+            if chunk:
+                f.write(chunk)
+
+# DOWNLOAD
+if not os.path.exists("similarity.pkl"):
+    download_file_from_drive("10_IrwLOuJUyqAn0esojVl0g1QrCB7EIQ", "similarity.pkl")
+# ==============================
+# DOWNLOAD similarity.pkl
+# ==============================
+if not os.path.exists("similarity.pkl"):
+    download_file_from_drive("10_IrwLOuJUyqAn0esojVl0g1QrCB7EIQ", "similarity.pkl")
 # ==============================
 # API HELPER
 # ==============================
 def fetch_movie_details(movie_id, movie_title):
-    api_key = "8265bd1679663a7ea12ac168da84d2e8"
-
-    url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&append_to_response=credits"
+    api_key = st.secrets["API_KEY"]
 
     try:
-        response = requests.get(url, timeout=5)
-        data = response.json()
+        # Try by ID
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&append_to_response=credits"
+        data = requests.get(url).json()
 
-        # fallback if API fails
-        if response.status_code != 200 or not data.get('poster_path'):
+        # Fallback: search by title
+        if not data.get('poster_path'):
             search_url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={movie_title}"
-            search_data = requests.get(search_url, timeout=5).json()
+            search_data = requests.get(search_url).json()
 
             if search_data.get('results'):
                 new_id = search_data['results'][0]['id']
                 data = requests.get(
                     f"https://api.themoviedb.org/3/movie/{new_id}?api_key={api_key}&append_to_response=credits"
                 ).json()
-            else:
-                return "https://via.placeholder.com/500x750?text=No+Poster", "N/A", "No overview", "N/A"
 
+        # Poster
         poster_path = data.get('poster_path')
-        poster = (
-            f"https://image.tmdb.org/t/p/w500/{poster_path.lstrip('/')}"
-            if poster_path else
-            "https://via.placeholder.com/500x750?text=No+Poster"
-        )
+        poster = f"https://image.tmdb.org/t/p/w500/{poster_path}" if poster_path else "https://via.placeholder.com/500x750?text=No+Image"
 
-        rating = round(data.get('vote_average', 0), 1)
-        overview = data.get('overview', 'No description available.')
+        # Rating
+        rating = data.get('vote_average', "N/A")
 
+        # Overview
+        overview = data.get('overview', "No overview available")
+
+        # Actors
         cast = data.get('credits', {}).get('cast', [])
         actors = ", ".join([c['name'] for c in cast[:3]]) if cast else "N/A"
 
