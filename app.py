@@ -6,7 +6,7 @@ import requests
 # 1. API HELPER (WITH FALLBACK)
 # ==============================
 def fetch_movie_details(movie_id, movie_title):
-    api_key = "8265bd1679663a7ea12ac168da84d2e8"
+    api_key = "Add Your Api key"
     
     # Attempt 1: Fetch by ID
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&append_to_response=credits"
