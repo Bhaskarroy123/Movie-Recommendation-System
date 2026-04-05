@@ -6,25 +6,15 @@ import streamlit as st
 # ==============================
 # DOWNLOAD similarity.pkl FROM DRIVE
 # ==============================
-def download_file_from_drive(file_id, destination):
-    URL = "https://drive.google.com/uc?export=download"
-    session = requests.Session()
+import os
+import requests
 
-    response = session.get(URL, params={'id': file_id}, stream=True)
-
-    # handle large file confirm
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            response = session.get(URL, params={'id': file_id, 'confirm': value}, stream=True)
-
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(32768):
-            if chunk:
-                f.write(chunk)
-
-# download file if not exists
 if not os.path.exists("similarity.pkl"):
-    download_file_from_drive("10_IrwLOuJUyqAn0esojVl0g1QrCB7EIQ", "similarity.pkl")
+    url = "https://github.com/Bhaskarroy123/Movie-Recommendation-System/releases/download/v1.0/similarity.pkl"
+    r = requests.get(url)
+    with open("similarity.pkl", "wb") as f:
+        f.write(r.content)
+
 
 # ==============================
 # API HELPER
