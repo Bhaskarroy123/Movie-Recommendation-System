@@ -1,11 +1,7 @@
 import os
-import gdown
-if not os.path.exists("similarity.pkl"):
-    url = "https://drive.google.com/uc?id=10_IrwLOuJUyqAn0esojVl0g1QrCB7EIQ"
-    gdown.download(url, "similarity.pkl", quiet=False)
+import requests
 import pickle
 import streamlit as st
-import requests
 
 # ==============================
 # DOWNLOAD similarity.pkl FROM DRIVE
@@ -16,7 +12,7 @@ def download_file_from_drive(file_id, destination):
 
     response = session.get(URL, params={'id': file_id}, stream=True)
 
-    # Handle large file confirmation
+    # handle large file confirm
     for key, value in response.cookies.items():
         if key.startswith('download_warning'):
             response = session.get(URL, params={'id': file_id, 'confirm': value}, stream=True)
@@ -26,14 +22,10 @@ def download_file_from_drive(file_id, destination):
             if chunk:
                 f.write(chunk)
 
-# DOWNLOAD
+# download file if not exists
 if not os.path.exists("similarity.pkl"):
     download_file_from_drive("10_IrwLOuJUyqAn0esojVl0g1QrCB7EIQ", "similarity.pkl")
-# ==============================
-# DOWNLOAD similarity.pkl
-# ==============================
-if not os.path.exists("similarity.pkl"):
-    download_file_from_drive("10_IrwLOuJUyqAn0esojVl0g1QrCB7EIQ", "similarity.pkl")
+
 # ==============================
 # API HELPER
 # ==============================
@@ -41,11 +33,9 @@ def fetch_movie_details(movie_id, movie_title):
     api_key = st.secrets["API_KEY"]
 
     try:
-        # Try by ID
         url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&append_to_response=credits"
         data = requests.get(url).json()
 
-        # Fallback: search by title
         if not data.get('poster_path'):
             search_url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={movie_title}"
             search_data = requests.get(search_url).json()
@@ -56,17 +46,12 @@ def fetch_movie_details(movie_id, movie_title):
                     f"https://api.themoviedb.org/3/movie/{new_id}?api_key={api_key}&append_to_response=credits"
                 ).json()
 
-        # Poster
         poster_path = data.get('poster_path')
         poster = f"https://image.tmdb.org/t/p/w500/{poster_path}" if poster_path else "https://via.placeholder.com/500x750?text=No+Image"
 
-        # Rating
         rating = data.get('vote_average', "N/A")
-
-        # Overview
         overview = data.get('overview', "No overview available")
 
-        # Actors
         cast = data.get('credits', {}).get('cast', [])
         actors = ", ".join([c['name'] for c in cast[:3]]) if cast else "N/A"
 
