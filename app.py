@@ -15,7 +15,7 @@ if not os.path.exists("similarity.pkl"):
 # API HELPER
 # ==============================
 def fetch_movie_details(movie_id, movie_title):
-    api_key = "8265bd1679663a7ea12ac168da84d2e8"
+    api_key = st.secrets["API_KEY"]
 
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&append_to_response=credits"
 
